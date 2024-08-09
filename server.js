@@ -1,46 +1,36 @@
 const express = require('express');
-const fetch = require('node-fetch');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const dotenv = require('dotenv');
-dotenv.config(); 
+dotenv.config();
 
 const app = express();
-
 app.use(express.static('public'));
 app.use(express.json());
 
+// Initialize the Google Generative AI with your API key
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 app.post('/api/ask', async (req, res) => {
     const { question, formattedNotes } = req.body;
-    const API_URL = 'https://api.openai.com/v1/chat/completions';
-    const API_KEY = process.env.OPENAI_API_KEY;
-    //console.log('API_KEY:', API_KEY);
-    
+
     try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`
-            },
-            body: JSON.stringify({
-                model: "gpt-3.5-turbo",
-                messages: [
-                    {"role": "system", "content": "You are a helpful assistant that answers questions based on the given notes ONLY. DO NOT add any extra information from your own knowledge."},
-                    {"role": "user", "content": `Notes:\n${formattedNotes}\n\nQuestion: ${question}`}
-                ]
-              ,temperature:0.2 //adjust for creativity
-            })
-          
-          
-        });
+        // Use Gemini Pro model
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        const prompt = `You are a helpful assistant that answers questions based on the given notes ONLY. DO NOT add any extra information from your own knowledge.
 
-        const data = await response.json();
-        res.json({ answer: data.choices[0].message.content });
+Notes:
+${formattedNotes}
+
+Question: ${question}`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const answer = response.text();
+
+        res.json({ answer });
     } catch (error) {
-        console.error('OpenAI API Error:', error);
+        console.error('Gemini API Error:', error);
         res.status(500).json({ error: 'An error occurred while processing your request.' });
     }
 });
