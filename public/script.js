@@ -1,4 +1,3 @@
-
 // Retrieve notes from localStorage or initialize an empty array
 let notes = JSON.parse(localStorage.getItem('notes')) || [];
 
@@ -91,7 +90,7 @@ askQuestionBtn.addEventListener('click', async () => {
     const question = questionInput.value.trim();
     if (question && notes.length > 0) {
         try {
-            const answer = await askOpenAI(question, notes);
+            const answer = await askGemini(question, notes);
             answerText.textContent = answer;
         } catch (error) {
             console.error('Error:', error);
@@ -102,8 +101,8 @@ askQuestionBtn.addEventListener('click', async () => {
     }
 });
 
-// Function to interact with OpenAI API
-async function askOpenAI(question, notes) {
+// Function to interact with Gemini API
+async function askGemini(question, notes) {
     try {
         const formattedNotes = notes.map((note, index) => `Note ${index + 1}: ${note.content}`).join('\n');
         const response = await fetch('/api/ask', {
@@ -125,5 +124,6 @@ async function askOpenAI(question, notes) {
         throw error;
     }
 }
+
 // Initial display of notes
 displayNotes();
